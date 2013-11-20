@@ -26,8 +26,9 @@ infixl 4 <$>
 -- >>> (+1) <$> Id 2
 -- Id 3
 instance Functor Id where
-  (<$>) =
-    error "todo"
+--	(<$>) f a = Id (f $ runId a)
+--OR:
+	(<$>) f (Id a) = Id $ f a
 
 -- | Maps a function on the List functor.
 --
@@ -37,8 +38,7 @@ instance Functor Id where
 -- >>> (+1) <$> (1 :. 2 :. 3 :. Nil)
 -- [2,3,4]
 instance Functor List where
-  (<$>) =
-    error "todo"
+  (<$>) = map
 
 -- | Maps a function on the Optional functor.
 --
@@ -48,17 +48,27 @@ instance Functor List where
 -- >>> (+1) <$> Full 2
 -- Full 3
 instance Functor Optional where
-  (<$>) =
-    error "todo"
+  (<$>) = mapOptional
 
 -- | Maps a function on the reader ((->) t) functor.
 --
 -- >>> ((+1) <$> (*2)) 8
 -- 17
 instance Functor ((->) t) where
-  (<$>) =
-    error "todo"
-
+  (<$>) = (.)
+-- To work this out, copy the declaration from the Functor class,
+-- and replace 'f' with '((->) t)'
+--  (<$>) ::
+--    (a -> b)
+--    -> ((->) t) a
+--    -> ((->) t) b
+-- This simplifies to
+--  (<$>) ::
+--    (a -> b)
+--    -> (t -> a)
+--    -> t -> b
+-- These types are the same as composition
+	
 -- | Anonymous map. Maps a constant value on a functor.
 --
 -- >>> 7 <$ [1,2,3]
@@ -72,8 +82,9 @@ instance Functor ((->) t) where
   a
   -> f b
   -> f a
-(<$) =
-  error "todo"
+--(<$) a b = (<$>) (\_ -> a) b
+--OR:
+(<$) a b = (const a) <$> b
 
 -----------------------
 -- SUPPORT LIBRARIES --
