@@ -82,9 +82,9 @@ instance Functor ((->) t) where
   a
   -> f b
   -> f a
---(<$) a b = (<$>) (\_ -> a) b
+(<$) a b = (\_ -> a) <$> b
 --OR:
-(<$) a b = (const a) <$> b
+--(<$) a b = (const a) <$> b
 
 -----------------------
 -- SUPPORT LIBRARIES --

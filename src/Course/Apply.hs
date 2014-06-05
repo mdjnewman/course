@@ -22,16 +22,16 @@ infixl 4 <*>
 -- >>> Id (+10) <*> Id 8
 -- Id 18
 instance Apply Id where
-  (<*>) =
-    error "todo"
+  (<*>) (Id f) (Id a) = Id $ f a
 
 -- | Implement @Apply@ instance for @List@.
 --
 -- >>> (+1) :. (*2) :. Nil <*> 1 :. 2 :. 3 :. Nil
 -- [2,3,4,2,4,6]
 instance Apply List where
-  (<*>) =
-    error "todo"
+--	(<*>) fs xs = flatMap (flip map xs) fs
+--OR:
+	(<*>) fs xs = flatMap (`map` xs) fs
 
 -- | Implement @Apply@ instance for @Optional@.
 --
@@ -44,9 +44,15 @@ instance Apply List where
 -- >>> Full (+8) <*> Empty
 -- Empty
 instance Apply Optional where
-  (<*>) =
-    error "todo"
-
+--  (<*>) _ Empty = Empty
+--  (<*>) Empty _ = Empty
+--  Full f <*> Full a = Full (f a)
+--OR:
+--  (<*>) Empty _ = Empty
+--  (<*>) (Full a) b = mapOptional a b
+--OR:
+	(<*>) fs xs = bindOptional (`mapOptional` xs) fs	
+	
 -- | Implement @Apply@ instance for reader.
 --
 -- >>> ((+) <*> (+10)) 3
@@ -64,8 +70,21 @@ instance Apply Optional where
 -- >>> ((*) <*> (+2)) 3
 -- 15
 instance Apply ((->) t) where
-  (<*>) =
-    error "todo"
+--  (<*>) (a) (b) (c) = a c (b c)
+--OR:
+    f <*> g = \t -> f t (g t)
+--To work this out, write the types:
+--(<*>) ::
+--  ((->) t) (a -> b)
+--  -> ((->) t) a
+--  -> ((->) t) b
+--This simplifies to:
+--(<*>) ::
+--    (t -> a -> b)
+--    -> (t -> a)
+--    -> t -> b
+--So, the first argument is a function that takes t (which we have),
+--and an a (which we can only get by using the second argument).
 
 -- | Apply a binary function in the environment.
 --
@@ -88,12 +107,14 @@ instance Apply ((->) t) where
 -- 18
 lift2 ::
   Apply f =>
-  (a -> b -> c)
-  -> f a
-  -> f b
+  (a -> (b -> c)) --f
+  -> f a        --a
+  -> f b        --b
   -> f c
-lift2 =
-  error "todo"
+--let r = f <$> a :: f (b -> c)
+--(<*>) :: f (b -> c) -> f b -> f c
+--f <$> a <*> b :: f c
+lift2 f a b = f <$> a <*> b
 
 -- | Apply a ternary function in the Monad environment.
 --
@@ -124,8 +145,12 @@ lift3 ::
   -> f b
   -> f c
   -> f d
-lift3 =
-  error "todo"
+--lift3 (f) (a) (b) (c) = f <$> a <*> b <*> c
+--OR
+--lift3 f a b c = lift2 f a b <*> c
+--OR
+lift3 = \f a -> (<*>) . (lift2 f a) 
+
 
 -- | Apply a quaternary function in the environment.
 --
@@ -157,8 +182,7 @@ lift4 ::
   -> f c
   -> f d
   -> f e
-lift4 =
-  error "todo"
+lift4 f a b c d = lift3 f a b c <*> d
 
 -- | Sequence, discarding the value of the first argument.
 --
@@ -176,27 +200,30 @@ lift4 =
   f a
   -> f b
   -> f b
-(*>) =
-  error "todo"
+--(*>) a b = lift2 (\_ y -> y) a b
+--OR:
+(*>) = lift2 (const id)
 
+{-
+The tests for this are wrong
+-}
 -- | Sequence, discarding the value of the second argument.
 --
--- [1,2,3] *> [4,5,6]
+-- [1,2,3] <* [4,5,6]
 -- [1,2,3,1,2,3,1,2,3]
 --
--- Full 7 *> Full 8
+-- Full 7 <* Full 8
 -- Full 7
 --
--- prop> [x,y,z] *> [a,b,c] == [x,y,z,x,y,z,x,y,z]
+-- prop> [x,y,z] <* [a,b,c] == [x,y,z,x,y,z,x,y,z]
 --
--- prop> Full x *> Full y == Full x
+-- prop> Full x <* Full y == Full x
 (<*) ::
   Apply f =>
   f b
   -> f a
   -> f b
-(<*) =
-  error "todo"
+(<*) = lift2 (\x _ -> x)
 
 -----------------------
 -- SUPPORT LIBRARIES --

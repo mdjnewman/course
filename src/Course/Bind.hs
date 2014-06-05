@@ -59,9 +59,12 @@ infixr 1 =<<
   f (a -> b)
   -> f a
   -> f b
-(<*>) =
-  error "todo"
-
+(<*>) f a = 
+  (flip (<$>) a) =<< f
+  -- undefined =<< f
+  
+  -- (a -> b) -> f b
+  
 infixl 4 <*>
 
 -- | Binds a function on the Id monad.
@@ -69,32 +72,30 @@ infixl 4 <*>
 -- >>> (\x -> Id(x+1)) =<< Id 2
 -- Id 3
 instance Bind Id where
-  (=<<) =
-    error "todo"
+  --(=<<) :: (a -> f b) -> f a -> f b
+  --         (a -> Id b) -> Id a -> Id b
+  f =<< Id a = f a
 
 -- | Binds a function on a List.
 --
 -- >>> (\n -> n :. n :. Nil) =<< (1 :. 2 :. 3 :. Nil)
 -- [1,1,2,2,3,3]
 instance Bind List where
-  (=<<) =
-    error "todo"
+  (=<<) = flatMap
 
 -- | Binds a function on an Optional.
 --
 -- >>> (\n -> Full (n + n)) =<< Full 7
 -- Full 14
 instance Bind Optional where
-  (=<<) =
-    error "todo"
+  (=<<) = bindOptional
 
 -- | Binds a function on the reader ((->) t).
 --
 -- >>> ((*) =<< (+10)) 7
 -- 119
 instance Bind ((->) t) where
-  (=<<) =
-    error "todo"
+  (=<<) f f' t = f (f' t) t
 
 -- | Flattens a combined structure to a single structure.
 --
@@ -113,8 +114,7 @@ join ::
   Bind f =>
   f (f a)
   -> f a
-join =
-  error "todo"
+join = (=<<) id
 
 -- | Implement a flipped version of @(=<<)@, however, use only
 -- @join@ and @(<$>)@.
@@ -123,8 +123,7 @@ join =
   f a
   -> (a -> f b)
   -> f b
-(>>=) =
-  error "todo"
+a >>= f = join (f <$> a)
 
 infixl 1 >>=
 
@@ -135,8 +134,7 @@ infixl 1 >>=
   -> (a -> f b)
   -> a
   -> f c
-(<=<) =
-  error "todo"
+f <=< g = \a -> g a >>= f
 
 infixr 1 <=<
 
